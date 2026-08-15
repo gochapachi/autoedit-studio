@@ -16,6 +16,7 @@ from ai.script_aligner import ScriptAligner
 from ai.take_selector import FillerAndTakeOptimizer
 from ai.face_tracker import Smart916Reframe
 from ai.voice_master import StudioVoiceMaster
+from ai.eye_contact import EyeContactCorrector
 from audio.ytdlp_fetcher import YTDLPFetcher
 from audio.beat_detector import BeatDetector
 from audio.sfx_ducking import SFXAndDuckingSuite
@@ -63,6 +64,7 @@ script_aligner = ScriptAligner()
 take_optimizer = FillerAndTakeOptimizer()
 face_reframe = Smart916Reframe()
 voice_master = StudioVoiceMaster()
+eye_corrector = EyeContactCorrector()
 ytdlp_fetcher = YTDLPFetcher(download_dir=os.path.join(DOWNLOADS_DIR, "audio"))
 beat_detector = BeatDetector()
 sfx_suite = SFXAndDuckingSuite(sfx_dir=SFX_DIR)
@@ -265,6 +267,16 @@ def search_or_fetch_bgm(req: BGMSearchRequest):
         beats = beat_detector.analyze_beats(res["file_path"])
         res["beats"] = beats
     return res
+
+class EyeContactRequest(BaseModel):
+    project_id: str
+    intensity: float = 0.85
+
+@app.post("/api/project/eye-contact")
+def apply_eye_contact_correction(req: EyeContactRequest):
+    proj_path = os.path.join(PROJECTS_DIR, req.project_id)
+    target_video = os.path.join(proj_path, "raw_video.mp4")
+    return eye_corrector.compute_gaze_correction_map(target_video, intensity=req.intensity)
 
 class FullRenderRequest(BaseModel):
     project_id: str
