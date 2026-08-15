@@ -211,8 +211,11 @@ export default function AutoEditStudioPage() {
           <Teleprompter
             script={currentScript}
             onClose={() => setShowPrompter(false)}
-            onFinishRecording={() => {
+            onFinishRecording={(recordedBlob, recordedUrl) => {
               setShowPrompter(false);
+              if (recordedUrl) {
+                setVideoUrl(recordedUrl);
+              }
               setCurrentStage(3);
             }}
           />
