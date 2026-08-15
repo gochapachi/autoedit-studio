@@ -13,12 +13,13 @@ import {
   Type,
   CheckCircle2,
   Eye,
-  EyeOff,
   Sparkles,
   CircleDot,
   RefreshCw,
-  ScanEye,
-  ShieldCheck,
+  Cpu,
+  Download,
+  Settings,
+  ChevronDown,
 } from 'lucide-react';
 
 interface TeleprompterProps {
@@ -34,12 +35,17 @@ export default function Teleprompter({ script, onClose, onFinishRecording }: Tel
   const [fontSize, setFontSize] = useState(28);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Live Camera & MediaRecorder State
+  // Video & Audio Devices
   const videoPreviewRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+  const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
+  const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedVideoDeviceId, setSelectedVideoDeviceId] = useState<string>('');
+  const [selectedAudioDeviceId, setSelectedAudioDeviceId] = useState<string>('');
+
+  // Camera & Recording State
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
@@ -49,41 +55,72 @@ export default function Teleprompter({ script, onClose, onFinishRecording }: Tel
   const [recordedBlobData, setRecordedBlobData] = useState<Blob | null>(null);
   const [audioLevel, setAudioLevel] = useState(0);
   const [takeNumber, setTakeNumber] = useState(1);
+  const [isMirrored, setIsMirrored] = useState(false);
+  const [showDeviceSettings, setShowDeviceSettings] = useState(false);
 
-  // Real-Time AI Eye Contact Correction State
-  const [eyeCorrectionEnabled, setEyeCorrectionEnabled] = useState(true);
-  const [eyeIntensity, setEyeIntensity] = useState<'subtle' | 'natural' | 'direct'>('natural');
-  const [isMirrored, setIsMirrored] = useState(true);
-  const [gazeLocked, setGazeLocked] = useState(true);
-  const [eyeLandmarks, setEyeLandmarks] = useState<{ leftX: number; rightX: number; eyeY: number } | null>(null);
-
-  // 1. Initialize Webcam Stream
-  const startCamera = async () => {
+  // 1. Enumerate Available Hardware & Virtual Devices (NVIDIA Broadcast, OBS, Webcams)
+  const enumerateHardwareDevices = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const vDevices = devices.filter((d) => d.kind === 'videoinput');
+      const aDevices = devices.filter((d) => d.kind === 'audioinput');
+
+      setVideoDevices(vDevices);
+      setAudioDevices(aDevices);
+
+      // Auto-select NVIDIA Broadcast if detected on Windows
+      const nvidiaCamera = vDevices.find((d) => d.label.toLowerCase().includes('nvidia broadcast'));
+      if (nvidiaCamera) {
+        setSelectedVideoDeviceId(nvidiaCamera.deviceId);
+      } else if (vDevices.length > 0 && !selectedVideoDeviceId) {
+        setSelectedVideoDeviceId(vDevices[0].deviceId);
+      }
+
+      const nvidiaMic = aDevices.find((d) => d.label.toLowerCase().includes('nvidia broadcast'));
+      if (nvidiaMic) {
+        setSelectedAudioDeviceId(nvidiaMic.deviceId);
+      } else if (aDevices.length > 0 && !selectedAudioDeviceId) {
+        setSelectedAudioDeviceId(aDevices[0].deviceId);
+      }
+    } catch (err) {
+      console.warn('Device enumeration failed:', err);
+    }
+  };
+
+  // 2. Start Camera Stream with Selected Device
+  const startCamera = async (videoDevId?: string, audioDevId?: string) => {
+    if (mediaStream) {
+      mediaStream.getTracks().forEach((t) => t.stop());
+    }
+
+    try {
+      const constraints: MediaStreamConstraints = {
         video: {
+          deviceId: videoDevId ? { exact: videoDevId } : undefined,
           width: { ideal: 1080 },
           height: { ideal: 1920 },
-          facingMode: 'user',
         },
         audio: {
+          deviceId: audioDevId ? { exact: audioDevId } : undefined,
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true,
         },
-      });
+      };
 
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       setMediaStream(stream);
+
       if (videoPreviewRef.current) {
         videoPreviewRef.current.srcObject = stream;
         videoPreviewRef.current.play();
       }
       setIsCameraActive(true);
 
-      // Setup audio level meter
+      // Refresh device list to get accurate device labels after permission grant
+      enumerateHardwareDevices();
       setupAudioMeter(stream);
     } catch (err) {
-      console.warn('Camera/Mic permission denied or not available:', err);
+      console.warn('Camera/Mic start failed:', err);
       setIsCameraActive(false);
     }
   };
@@ -131,79 +168,11 @@ export default function Teleprompter({ script, onClose, onFinishRecording }: Tel
   };
 
   useEffect(() => {
-    startCamera();
+    startCamera(selectedVideoDeviceId, selectedAudioDeviceId);
     return () => stopCamera();
-  }, []);
+  }, [selectedVideoDeviceId, selectedAudioDeviceId]);
 
-  // 2. Real-Time Canvas AI Eye Contact & Gaze Redirection Pipeline
-  useEffect(() => {
-    let animFrame: number;
-
-    const processFrame = () => {
-      if (isCameraActive && videoPreviewRef.current && canvasRef.current) {
-        const video = videoPreviewRef.current;
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-
-        if (ctx && video.readyState >= 2) {
-          const w = canvas.width;
-          const h = canvas.height;
-
-          // Draw the video frame to canvas
-          ctx.save();
-          if (isMirrored) {
-            ctx.translate(w, 0);
-            ctx.scale(-1, 1);
-          }
-          ctx.drawImage(video, 0, 0, w, h);
-          ctx.restore();
-
-          if (eyeCorrectionEnabled) {
-            // Estimate eye region (upper 35-45% of face)
-            const eyeY = Math.round(h * 0.38);
-            const leftEyeX = Math.round(w * 0.40);
-            const rightEyeX = Math.round(w * 0.60);
-            const eyeRadius = Math.round(w * 0.055);
-
-            setEyeLandmarks({ leftX: leftEyeX, rightX: rightEyeX, eyeY: eyeY });
-
-            // Apply Gaze Redirection: Sample eye region and shift vertical iris position upward towards camera lens
-            const shiftPixels = eyeIntensity === 'direct' ? 7 : eyeIntensity === 'natural' ? 5 : 3;
-
-            [leftEyeX, rightEyeX].forEach((eyeX) => {
-              try {
-                const patchSize = eyeRadius * 2;
-                const patchX = Math.max(0, eyeX - eyeRadius);
-                const patchY = Math.max(0, eyeY - eyeRadius);
-
-                const eyeImageData = ctx.getImageData(patchX, patchY, patchSize, patchSize);
-                
-                // Subtle upward displacement blend & micro-contrast enhancement for iris
-                ctx.putImageData(eyeImageData, patchX, patchY - shiftPixels);
-
-                // Draw soft optical focus blend
-                const grad = ctx.createRadialGradient(eyeX, eyeY - shiftPixels, 1, eyeX, eyeY - shiftPixels, eyeRadius);
-                grad.addColorStop(0, 'rgba(255, 255, 255, 0.12)');
-                grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-                ctx.fillStyle = grad;
-                ctx.beginPath();
-                ctx.arc(eyeX, eyeY - shiftPixels, eyeRadius, 0, Math.PI * 2);
-                ctx.fill();
-              } catch (e) {
-                // Cross-origin safety
-              }
-            });
-          }
-        }
-      }
-      animFrame = requestAnimationFrame(processFrame);
-    };
-
-    animFrame = requestAnimationFrame(processFrame);
-    return () => cancelAnimationFrame(animFrame);
-  }, [isCameraActive, eyeCorrectionEnabled, eyeIntensity, isMirrored]);
-
-  // 3. Teleprompter Auto-Scroll Loop
+  // Teleprompter Auto-Scroll Loop
   useEffect(() => {
     let animFrame: number;
     const scroll = () => {
@@ -216,7 +185,7 @@ export default function Teleprompter({ script, onClose, onFinishRecording }: Tel
     return () => cancelAnimationFrame(animFrame);
   }, [isPlaying, scrollSpeed]);
 
-  // 4. Recording Timer
+  // Recording Timer
   useEffect(() => {
     let interval: any;
     if (isRecording) {
@@ -229,7 +198,6 @@ export default function Teleprompter({ script, onClose, onFinishRecording }: Tel
     return () => clearInterval(interval);
   }, [isRecording]);
 
-  // 5. Start Recording with 3-2-1 Countdown
   const triggerRecording = () => {
     if (isRecording) {
       stopRecording();
@@ -251,28 +219,13 @@ export default function Teleprompter({ script, onClose, onFinishRecording }: Tel
 
   const startActualRecording = () => {
     try {
-      let recordStream: MediaStream;
-
-      // If Eye Contact is enabled, record the gaze-corrected Canvas stream directly!
-      if (eyeCorrectionEnabled && canvasRef.current) {
-        const canvasStream = canvasRef.current.captureStream(30);
-        if (mediaStream) {
-          const audioTracks = mediaStream.getAudioTracks();
-          if (audioTracks.length > 0) {
-            canvasStream.addTrack(audioTracks[0]);
-          }
-        }
-        recordStream = canvasStream;
-      } else {
-        recordStream = mediaStream || (videoPreviewRef.current?.srcObject as MediaStream);
-      }
-
-      if (!recordStream) return;
+      const stream = mediaStream || (videoPreviewRef.current?.srcObject as MediaStream);
+      if (!stream) return;
 
       const options = { mimeType: 'video/webm;codecs=vp9,opus' };
       const mime = MediaRecorder.isTypeSupported(options.mimeType) ? options.mimeType : 'video/webm';
 
-      const recorder = new MediaRecorder(recordStream, { mimeType: mime });
+      const recorder = new MediaRecorder(stream, { mimeType: mime });
       mediaRecorderRef.current = recorder;
       const chunks: Blob[] = [];
 
@@ -293,7 +246,7 @@ export default function Teleprompter({ script, onClose, onFinishRecording }: Tel
       recorder.start(100);
       setIsRecording(true);
       setRecordSeconds(0);
-      setIsPlaying(true); // Auto-start prompter scroll
+      setIsPlaying(true);
     } catch (err) {
       console.error('Failed to start MediaRecorder:', err);
     }
@@ -342,6 +295,10 @@ export default function Teleprompter({ script, onClose, onFinishRecording }: Tel
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
+  const isNvidiaSelected = videoDevices.some(
+    (d) => d.deviceId === selectedVideoDeviceId && d.label.toLowerCase().includes('nvidia broadcast')
+  );
+
   return (
     <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl flex flex-col items-center justify-between p-4 sm:p-6 animate-fadeIn select-none">
       {/* 3-2-1 Countdown Overlay */}
@@ -377,47 +334,27 @@ export default function Teleprompter({ script, onClose, onFinishRecording }: Tel
           </div>
         </div>
 
-        {/* AI Eye Contact Control Suite */}
+        {/* Camera Source Selector (With NVIDIA Broadcast Integration) */}
         <div className="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-surface-border">
-          <button
-            onClick={() => setEyeCorrectionEnabled(!eyeCorrectionEnabled)}
-            className={`flex items-center gap-1.5 text-xs font-bold px-2 py-0.5 rounded-lg transition ${
-              eyeCorrectionEnabled
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm shadow-emerald-500/20'
-                : 'bg-slate-800 text-slate-400'
-            }`}
-          >
-            <ScanEye className={`w-3.5 h-3.5 ${eyeCorrectionEnabled ? 'text-emerald-400 animate-pulse' : ''}`} />
-            <span>{eyeCorrectionEnabled ? 'AI Eye Contact: ACTIVE' : 'AI Eye Contact: OFF'}</span>
-          </button>
+          <div className="flex items-center gap-1.5 text-xs">
+            <Cpu className={`w-3.5 h-3.5 ${isNvidiaSelected ? 'text-emerald-400' : 'text-indigo-400'}`} />
+            <select
+              value={selectedVideoDeviceId}
+              onChange={(e) => setSelectedVideoDeviceId(e.target.value)}
+              className="bg-transparent text-slate-200 font-medium text-xs focus:outline-none cursor-pointer max-w-[180px] truncate"
+            >
+              {videoDevices.map((d, i) => (
+                <option key={d.deviceId || i} value={d.deviceId} className="bg-slate-900 text-white">
+                  {d.label || `Camera ${i + 1}`}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          {eyeCorrectionEnabled && (
-            <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-400 pl-1 border-l border-surface-border">
-              <button
-                onClick={() => setEyeIntensity('subtle')}
-                className={`px-1.5 py-0.5 rounded ${
-                  eyeIntensity === 'subtle' ? 'bg-indigo-600 text-white font-bold' : 'hover:text-white'
-                }`}
-              >
-                Subtle
-              </button>
-              <button
-                onClick={() => setEyeIntensity('natural')}
-                className={`px-1.5 py-0.5 rounded ${
-                  eyeIntensity === 'natural' ? 'bg-indigo-600 text-white font-bold' : 'hover:text-white'
-                }`}
-              >
-                Natural (85%)
-              </button>
-              <button
-                onClick={() => setEyeIntensity('direct')}
-                className={`px-1.5 py-0.5 rounded ${
-                  eyeIntensity === 'direct' ? 'bg-indigo-600 text-white font-bold' : 'hover:text-white'
-                }`}
-              >
-                Direct (100%)
-              </button>
-            </div>
+          {isNvidiaSelected && (
+            <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-[9px] flex items-center gap-1 border border-emerald-500/30">
+              <Eye className="w-3 h-3" /> RTX Eye Contact Active
+            </span>
           )}
         </div>
 
@@ -474,19 +411,10 @@ export default function Teleprompter({ script, onClose, onFinishRecording }: Tel
 
       {/* Main Studio View: Live Camera on Left, Scrolling Teleprompter on Right */}
       <div className="w-full max-w-5xl flex-1 grid grid-cols-1 md:grid-cols-12 gap-6 my-4 overflow-hidden items-center">
-        {/* Left Column: Live Camera & AI Eye Redirection Canvas */}
+        {/* Left Column: Live Camera Feed */}
         <div className="md:col-span-5 flex flex-col items-center justify-center h-full">
           <div className="relative w-[280px] h-[460px] sm:w-[310px] sm:h-[510px] rounded-3xl overflow-hidden shadow-2xl border-4 border-slate-800/80 bg-black flex items-center justify-center">
-            {/* Hidden raw video element used as canvas source */}
-            <video
-              ref={videoPreviewRef}
-              autoPlay
-              muted
-              playsInline
-              className="hidden"
-            />
-
-            {/* Recorded Video Playback OR Real-Time AI Canvas Feed */}
+            {/* Recorded Video Playback OR Real-Time Camera */}
             {recordedVideoUrl ? (
               <video
                 src={recordedVideoUrl}
@@ -495,18 +423,19 @@ export default function Teleprompter({ script, onClose, onFinishRecording }: Tel
                 className="w-full h-full object-cover"
               />
             ) : isCameraActive ? (
-              <canvas
-                ref={canvasRef}
-                width={360}
-                height={640}
-                className="w-full h-full object-cover"
+              <video
+                ref={videoPreviewRef}
+                autoPlay
+                muted
+                playsInline
+                className={`w-full h-full object-cover ${isMirrored ? 'scale-x-[-1]' : ''}`}
               />
             ) : (
               <div className="text-center p-6 space-y-3">
                 <VideoOff className="w-10 h-10 text-slate-600 mx-auto" />
                 <div className="text-sm font-bold text-slate-400">Webcam Inactive</div>
                 <button
-                  onClick={startCamera}
+                  onClick={() => startCamera(selectedVideoDeviceId, selectedAudioDeviceId)}
                   className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold"
                 >
                   Enable Camera
@@ -514,33 +443,13 @@ export default function Teleprompter({ script, onClose, onFinishRecording }: Tel
               </div>
             )}
 
-            {/* AI Eye Contact Status Indicator Overlay */}
-            {isCameraActive && !recordedVideoUrl && eyeCorrectionEnabled && (
-              <div className="absolute top-4 inset-x-4 z-20 flex items-center justify-between pointer-events-none">
-                <span className="text-[10px] uppercase tracking-wider bg-emerald-950/90 text-emerald-300 font-extrabold px-2.5 py-1 rounded-full border border-emerald-500/40 shadow-lg flex items-center gap-1.5 backdrop-blur-md">
-                  <ScanEye className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-                  <span>Gaze Locked to Camera</span>
+            {/* NVIDIA Broadcast RTX Banner */}
+            {isNvidiaSelected && !recordedVideoUrl && (
+              <div className="absolute top-4 inset-x-4 z-20 flex items-center justify-center pointer-events-none">
+                <span className="text-[10px] uppercase tracking-wider bg-black/80 text-emerald-300 font-extrabold px-3 py-1 rounded-full border border-emerald-500/40 shadow-lg flex items-center gap-1.5 backdrop-blur-md">
+                  <Cpu className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>NVIDIA Broadcast RTX Eye Contact Active</span>
                 </span>
-                <span className="text-[9px] font-mono text-emerald-300/80 bg-black/60 px-2 py-0.5 rounded-full">
-                  {eyeIntensity === 'direct' ? '100%' : eyeIntensity === 'natural' ? '85%' : '70%'}
-                </span>
-              </div>
-            )}
-
-            {/* Live Eye Tracking Reticle overlay */}
-            {isCameraActive && !recordedVideoUrl && eyeCorrectionEnabled && eyeLandmarks && (
-              <div
-                className="absolute pointer-events-none z-10"
-                style={{
-                  top: `${(eyeLandmarks.eyeY / 640) * 100}%`,
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                }}
-              >
-                <div className="w-24 h-10 border-2 border-emerald-400/60 rounded-full flex items-center justify-around px-2 animate-pulse shadow-[0_0_15px_rgba(16,185,129,0.3)]">
-                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400/80 ring-2 ring-emerald-300" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400/80 ring-2 ring-emerald-300" />
-                </div>
               </div>
             )}
 
@@ -583,7 +492,7 @@ export default function Teleprompter({ script, onClose, onFinishRecording }: Tel
             style={{ fontSize: `${fontSize}px`, lineHeight: 1.6 }}
           >
             <div className="text-slate-500 text-xs font-mono uppercase tracking-widest pb-4">
-              --- START OF SCRIPT (READ NATURALLY - AI IS CORRECTING GAZE) ---
+              --- START OF SCRIPT (READ NATURALLY) ---
             </div>
 
             {/* Hook */}
