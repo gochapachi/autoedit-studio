@@ -88,14 +88,15 @@ export default function AutoEditStudioPage() {
   const [socialPackage, setSocialPackage] = useState<any>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
 
-  const handleTranscribe = async (language?: string) => {
+  const handleTranscribe = async (language?: string, targetProjId?: string) => {
+    const activeProj = targetProjId || projectId;
     setIsTranscribing(true);
     try {
       const res = await fetch('http://127.0.0.1:8000/api/project/transcribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          project_id: projectId,
+          project_id: activeProj,
           language: language || undefined,
         }),
       });
@@ -226,15 +227,19 @@ export default function AutoEditStudioPage() {
           <Teleprompter
             script={currentScript}
             onClose={() => setShowPrompter(false)}
-            onFinishRecording={(recordedBlob, recordedUrl) => {
+            onFinishRecording={(recordedBlob, recordedUrl, newProjectId) => {
               setShowPrompter(false);
+              const activeProj = newProjectId || projectId;
+              if (newProjectId) {
+                setProjectId(newProjectId);
+              }
               if (recordedUrl) {
                 setVideoUrl(recordedUrl);
               }
               setCurrentStage(3);
               setTimeout(() => {
-                handleTranscribe();
-              }, 600);
+                handleTranscribe(undefined, activeProj);
+              }, 400);
             }}
           />
         )}

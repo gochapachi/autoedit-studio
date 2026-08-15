@@ -25,7 +25,7 @@ import {
 interface TeleprompterProps {
   script: any;
   onClose: () => void;
-  onFinishRecording: (recordedBlob?: Blob, recordedUrl?: string) => void;
+  onFinishRecording: (recordedBlob?: Blob, recordedUrl?: string, newProjectId?: string) => void;
 }
 
 export default function Teleprompter({ script, onClose, onFinishRecording }: TeleprompterProps) {
@@ -280,7 +280,11 @@ export default function Teleprompter({ script, onClose, onFinishRecording }: Tel
           body: formData,
         });
         const data = await res.json();
-        onFinishRecording(recordedBlobData, data.url ? `http://127.0.0.1:8000${data.url}` : recordedVideoUrl || '');
+        onFinishRecording(
+          recordedBlobData,
+          data.url ? `http://127.0.0.1:8000${data.url}` : recordedVideoUrl || '',
+          data.project_id
+        );
         return;
       } catch (e) {
         console.error(e);

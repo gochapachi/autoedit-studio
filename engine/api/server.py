@@ -224,6 +224,19 @@ def _find_project_video(project_id: str, video_path: Optional[str] = None) -> st
         files = [os.path.join(proj_path, f) for f in os.listdir(proj_path) if not f.endswith(('.json', '.ass'))]
         if files:
             return files[0]
+
+    # Smart fallback: Search for the most recently uploaded video in all projects
+    if os.path.exists(PROJECTS_DIR):
+        all_projs = sorted(os.listdir(PROJECTS_DIR), key=lambda d: os.path.getmtime(os.path.join(PROJECTS_DIR, d)), reverse=True)
+        for p_dir in all_projs:
+            sub = os.path.join(PROJECTS_DIR, p_dir)
+            if os.path.isdir(sub):
+                for ext in [".webm", ".mp4", ".mov", ".mkv", ".avi", ".wav", ".mp3"]:
+                    p = os.path.join(sub, f"raw_video{ext}")
+                    if os.path.exists(p):
+                        logger.info(f"Fallback matched video from recent project [{p_dir}]: {p}")
+                        return p
+
     return os.path.join(proj_path, "raw_video.mp4")
 
 class TranscribeRequest(BaseModel):
