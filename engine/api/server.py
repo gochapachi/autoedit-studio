@@ -212,18 +212,35 @@ async def upload_raw_video(file: UploadFile = File(...)):
         "url": f"/projects/{project_id}/raw_video{file_ext}"
     }
 
+def _find_project_video(project_id: str, video_path: Optional[str] = None) -> str:
+    if video_path and os.path.exists(video_path):
+        return video_path
+    proj_path = os.path.join(PROJECTS_DIR, project_id)
+    for ext in [".webm", ".mp4", ".mov", ".mkv", ".avi", ".wav", ".mp3"]:
+        p = os.path.join(proj_path, f"raw_video{ext}")
+        if os.path.exists(p):
+            return p
+    if os.path.exists(proj_path):
+        files = [os.path.join(proj_path, f) for f in os.listdir(proj_path) if not f.endswith(('.json', '.ass'))]
+        if files:
+            return files[0]
+    return os.path.join(proj_path, "raw_video.mp4")
+
 class TranscribeRequest(BaseModel):
     project_id: str
     video_path: Optional[str] = None
+    language: Optional[str] = None
 
 @app.post("/api/project/transcribe")
 async def transcribe_video(req: TranscribeRequest):
     proj_path = os.path.join(PROJECTS_DIR, req.project_id)
-    target_video = req.video_path or os.path.join(proj_path, "raw_video.mp4")
+    os.makedirs(proj_path, exist_ok=True)
+    target_video = _find_project_video(req.project_id, req.video_path)
     
+    logger.info(f"Starting Whisper transcription for project [{req.project_id}], target: {target_video}")
     await broadcast_progress("transcription", 25, "Running faster-whisper word-level transcription...", req.project_id)
     
-    res = transcriber.transcribe(target_video)
+    res = transcriber.transcribe(target_video, language=req.language)
     
     # Save transcript to project
     with open(os.path.join(proj_path, "transcript.json"), "w", encoding="utf-8") as f:
@@ -238,8 +255,7 @@ class VADRequest(BaseModel):
 
 @app.post("/api/project/clean-vad")
 def clean_silences(req: VADRequest):
-    proj_path = os.path.join(PROJECTS_DIR, req.project_id)
-    target_video = os.path.join(proj_path, "raw_video.mp4")
+    target_video = _find_project_video(req.project_id)
     return vad_trimmer.detect_speech_intervals(target_video, min_silence_sec=req.min_silence_sec)
 
 class FillerCleanRequest(BaseModel):
@@ -292,7 +308,7 @@ class FullRenderRequest(BaseModel):
 @app.post("/api/project/render-nvenc")
 async def render_project_nvenc(req: FullRenderRequest, background_tasks: BackgroundTasks):
     proj_path = os.path.join(PROJECTS_DIR, req.project_id)
-    input_video = os.path.join(proj_path, "raw_video.mp4")
+    input_video = _find_project_video(req.project_id)
     output_video = os.path.join(EXPORTS_DIR, f"{req.project_id}_viral_short.mp4")
     
     # Load transcript

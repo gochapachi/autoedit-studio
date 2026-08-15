@@ -86,6 +86,29 @@ export default function AutoEditStudioPage() {
   const [silenceCutSec, setSilenceCutSec] = useState(3.8);
   const [fillerCount, setFillerCount] = useState(6);
   const [socialPackage, setSocialPackage] = useState<any>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+
+  const handleTranscribe = async (language?: string) => {
+    setIsTranscribing(true);
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/project/transcribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: projectId,
+          language: language || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (data && data.words && data.words.length > 0) {
+        setTranscriptData(data);
+      }
+    } catch (err) {
+      console.error('Transcription error:', err);
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
 
   // Poll engine health on mount
   useEffect(() => {
@@ -125,17 +148,9 @@ export default function AutoEditStudioPage() {
         setVideoUrl(`http://127.0.0.1:8000${data.url}`);
 
         // Automatically trigger Faster-Whisper transcription
-        fetch('http://127.0.0.1:8000/api/project/transcribe', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ project_id: data.project_id }),
-        })
-          .then((r) => r.json())
-          .then((tData) => {
-            if (tData.words) {
-              setTranscriptData(tData);
-            }
-          });
+        setTimeout(() => {
+          handleTranscribe();
+        }, 300);
       }
     } catch (err) {
       console.error(err);
@@ -217,6 +232,9 @@ export default function AutoEditStudioPage() {
                 setVideoUrl(recordedUrl);
               }
               setCurrentStage(3);
+              setTimeout(() => {
+                handleTranscribe();
+              }, 600);
             }}
           />
         )}
@@ -282,8 +300,10 @@ export default function AutoEditStudioPage() {
                   onSeek={setCurrentTime}
                   onCleanVAD={handleCleanVAD}
                   onCleanFillers={handleCleanFillers}
+                  onTranscribe={handleTranscribe}
                   silenceCutSec={silenceCutSec}
                   fillerCount={fillerCount}
+                  isTranscribing={isTranscribing}
                 />
 
                 <StylePresets

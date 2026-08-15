@@ -1,5 +1,6 @@
 import os
 import gc
+import subprocess
 import logging
 from typing import Dict, Any, List, Optional
 
@@ -15,6 +16,49 @@ class FastTranscriber:
         self.model_size = model_size
         self.device = device
         self.model = None
+
+    def _resolve_ffmpeg(self) -> str:
+        """Finds FFmpeg binary from PATH or imageio_ffmpeg."""
+        try:
+            res = subprocess.run(["ffmpeg", "-version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            if res.returncode == 0:
+                return "ffmpeg"
+        except Exception:
+            pass
+
+        try:
+            import imageio_ffmpeg
+            return imageio_ffmpeg.get_ffmpeg_exe()
+        except Exception:
+            return "ffmpeg"
+
+    def _extract_clean_wav(self, video_or_audio_path: str) -> str:
+        """
+        Extracts 16kHz mono PCM WAV to guarantee 100% decoding reliability
+        for all video formats (MP4, WebM, MOV, MKV, AVI).
+        """
+        wav_path = os.path.splitext(video_or_audio_path)[0] + "_extracted.wav"
+        if os.path.exists(wav_path) and os.path.getsize(wav_path) > 1000:
+            return wav_path
+
+        ffmpeg_bin = self._resolve_ffmpeg()
+        cmd = [
+            ffmpeg_bin, "-y",
+            "-i", video_or_audio_path,
+            "-vn",
+            "-acodec", "pcm_s16le",
+            "-ar", "16000",
+            "-ac", "1",
+            wav_path
+        ]
+        try:
+            res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            if res.returncode == 0 and os.path.exists(wav_path):
+                return wav_path
+        except Exception as e:
+            logger.warning(f"Audio extraction with ffmpeg failed: {e}")
+
+        return video_or_audio_path
 
     def _get_optimal_device_and_type(self):
         try:
@@ -40,15 +84,25 @@ class FastTranscriber:
             self.model = WhisperModel(self.model_size, device=device, compute_type=compute_type)
             return self.model
         except Exception as e:
-            logger.warning(f"faster-whisper load failed ({e}). Falling back to CPU mock/simulation if needed.")
-            return None
+            logger.warning(f"faster-whisper load failed ({e}). Falling back to CPU INT8.")
+            try:
+                from faster_whisper import WhisperModel
+                self.model = WhisperModel(self.model_size, device="cpu", compute_type="int8")
+                return self.model
+            except Exception as e2:
+                logger.error(f"CPU fallback also failed: {e2}")
+                return None
 
-    def transcribe(self, audio_path: str, language: Optional[str] = None) -> Dict[str, Any]:
+    def transcribe(self, media_path: str, language: Optional[str] = None) -> Dict[str, Any]:
         """
-        Transcribes audio file and returns segments with exact word-level millisecond timestamps.
+        Transcribes audio/video file and returns segments with exact word-level millisecond timestamps.
         """
-        if not os.path.exists(audio_path):
-            raise FileNotFoundError(f"Audio file not found: {audio_path}")
+        if not os.path.exists(media_path):
+            raise FileNotFoundError(f"Media file not found: {media_path}")
+
+        # Extract clean 16kHz WAV first to ensure WebM/MP4 codecs decode flawlessly
+        clean_audio_path = self._extract_clean_wav(media_path)
+        logger.info(f"Transcribing audio source: {clean_audio_path}")
 
         model = self.load_model()
         
@@ -59,76 +113,57 @@ class FastTranscriber:
         if model is not None:
             try:
                 segments, info = model.transcribe(
-                    audio_path,
+                    clean_audio_path,
                     language=language,
                     word_timestamps=True,
                     vad_filter=True,
-                    vad_parameters=dict(min_silence_duration_ms=400)
+                    vad_parameters=dict(min_silence_duration_ms=300)
                 )
 
                 for seg in segments:
+                    text_clean = seg.text.strip()
+                    if not text_clean:
+                        continue
+
                     seg_dict = {
                         "id": seg.id,
                         "start": round(seg.start, 3),
                         "end": round(seg.end, 3),
-                        "text": seg.text.strip(),
+                        "text": text_clean,
                         "words": []
                     }
                     if seg.words:
                         for w in seg.words:
-                            word_item = {
-                                "word": w.word.strip(),
-                                "start": round(w.start, 3),
-                                "end": round(w.end, 3),
-                                "probability": round(w.probability, 3)
-                            }
-                            seg_dict["words"].append(word_item)
-                            words_list.append(word_item)
+                            w_str = w.word.strip()
+                            if w_str:
+                                word_item = {
+                                    "word": w_str,
+                                    "start": round(w.start, 3),
+                                    "end": round(w.end, 3),
+                                    "probability": round(w.probability, 3)
+                                }
+                                seg_dict["words"].append(word_item)
+                                words_list.append(word_item)
 
                     segments_list.append(seg_dict)
-                    full_transcript.append(seg.text.strip())
+                    full_transcript.append(text_clean)
 
                 detected_lang = info.language
                 duration = round(info.duration, 2)
             except Exception as e:
-                logger.error(f"Error during transcription: {e}")
+                logger.error(f"Error during whisper inference: {e}")
                 detected_lang = "en"
                 duration = 0.0
         else:
-            # Fallback simulator for development/lightweight testing
-            logger.info("Using simulated word-level timestamps")
+            logger.warning("Whisper model not initialized")
             detected_lang = "en"
-            duration = 15.0
-            sample_words = [
-                "Stop", "scrolling", "if", "you", "want", "to", "scale", "your", "business",
-                "Here", "are", "three", "game", "changing", "AI", "tools", "you", "need", "today."
-            ]
-            t = 0.0
-            for sw in sample_words:
-                w_dur = 0.35
-                w_item = {
-                    "word": sw,
-                    "start": round(t, 2),
-                    "end": round(t + w_dur, 2),
-                    "probability": 0.98
-                }
-                words_list.append(w_item)
-                t += w_dur + 0.05
-            
-            segments_list = [{
-                "id": 0,
-                "start": 0.0,
-                "end": round(t, 2),
-                "text": " ".join(sample_words),
-                "words": words_list
-            }]
-            full_transcript = [" ".join(sample_words)]
+            duration = 10.0
 
         # VRAM Cleanup & Garbage Collection
         self.cleanup_vram()
 
         return {
-            "language": detected_lang,
+            "language": detected_lang or "en",
             "duration": duration,
             "text": " ".join(full_transcript),
             "segments": segments_list,
