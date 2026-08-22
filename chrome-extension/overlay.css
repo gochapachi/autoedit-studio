@@ -1,0 +1,96 @@
+/* AutoEdit Floating Teleprompter Styles */
+.autoedit-floating-prompter {
+  position: fixed !important;
+  top: 40px !important;
+  right: 40px !important;
+  width: 380px !important;
+  height: 480px !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 2px solid #4f46e5 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18) !important;
+  z-index: 2147483647 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  overflow: hidden !important;
+  color: #0f172a !important;
+}
+
+.autoedit-prompter-header {
+  padding: 10px 14px !important;
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  cursor: move !important;
+  user-select: none !important;
+}
+
+.autoedit-header-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
+}
+
+.autoedit-dot {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background: #10b981 !important;
+  display: inline-block !important;
+}
+
+.autoedit-header-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.autoedit-btn {
+  padding: 4px 8px !important;
+  background: #4f46e5 !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+}
+
+.autoedit-btn.autoedit-close {
+  background: #f1f5f9 !important;
+  color: #64748b !important;
+}
+.autoedit-btn.autoedit-close:hover {
+  background: #fee2e2 !important;
+  color: #dc2626 !important;
+}
+
+.autoedit-prompter-body {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  padding: 16px !important;
+  line-height: 1.6 !important;
+  font-weight: 600 !important;
+  color: #1e293b !important;
+}
+
+.autoedit-prompter-text {
+  white-space: pre-wrap !important;
+}
+
+.autoedit-prompter-footer {
+  padding: 6px 12px !important;
+  background: #f8fafc !important;
+  border-top: 1px solid #e2e8f0 !important;
+  font-size: 10px !important;
+  color: #64748b !important;
+  text-align: center !important;
+}

@@ -30,3 +30,17 @@ downloads/
 Thumbs.db
 .idea/
 .vscode/
+
+# Runtime state & logs
+engine/brand_profile.json
+engine/storage/history.json
+engine_smoke.log
+frontend_smoke.log
+pull_9b.log
+*.log
+app/tsconfig.tsbuildinfo
+app/broll-studio/.bundle-cache/
+app/broll-studio/npm_install.log
+tests/scratch/
+tests/agent_harness_report.json
+.zcode/

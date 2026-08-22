@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AutoEdit Teleprompter</title>
+  <style>
+    body {
+      width: 320px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 16px;
+      background: #ffffff;
+      color: #0f172a;
+    }
+    h3 {
+      margin: 0 0 4px 0;
+      font-size: 14px;
+      font-weight: 700;
+      color: #4f46e5;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    p {
+      margin: 0 0 12px 0;
+      font-size: 11px;
+      color: #64748b;
+    }
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      height: 100px;
+      padding: 8px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 12px;
+      resize: vertical;
+      background: #f8fafc;
+      font-family: inherit;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 10px 0;
+      font-size: 11px;
+      color: #475569;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: #4f46e5;
+    }
+    .btn {
+      width: 100%;
+      padding: 9px;
+      background: #4f46e5;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+    .btn:hover {
+      background: #4338ca;
+    }
+    .btn-secondary {
+      background: #f1f5f9;
+      color: #334155;
+      margin-top: 6px;
+    }
+    .btn-secondary:hover {
+      background: #e2e8f0;
+    }
+  </style>
+</head>
+<body>
+  <h3>⚡ AutoEdit Teleprompter</h3>
+  <p>Overlay a floating transparent script over any tab during screen recording.</p>
+
+  <textarea id="scriptText" placeholder="Paste or sync your video script here..."></textarea>
+
+  <div class="controls">
+    <div>
+      <label>Speed: <span id="speedVal">3x</span></label>
+      <input type="range" id="scrollSpeed" min="1" max="8" step="0.5" value="3">
+    </div>
+    <div>
+      <label>Font: <span id="fontVal">22px</span></label>
+      <input type="range" id="fontSize" min="14" max="36" value="22">
+    </div>
+  </div>
+
+  <button class="btn" id="launchBtn">
+    <span>Launch Floating Prompter</span>
+  </button>
+  <button class="btn btn-secondary" id="hideBtn">
+    <span>Hide / Remove Overlay</span>
+  </button>
+
+  <script src="popup.js"></script>
+</body>
+</html>

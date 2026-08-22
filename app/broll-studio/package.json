@@ -1,0 +1,17 @@
+{
+  "name": "autoedit-broll-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Motion-design B-roll and overlay cards, rendered by the AutoEdit engine with transparent video.",
+  "dependencies": {
+    "@remotion/bundler": "^4.0.407",
+    "@remotion/renderer": "4.0.407",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "remotion": "4.0.407"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.16",
+    "typescript": "5.9.3"
+  }
+}

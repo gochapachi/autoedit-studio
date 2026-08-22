@@ -1,8 +1,9 @@
 {
-  "name": "ScaleFlow AI",
-  "niche": "B2B Software & AI Automation",
-  "audience": "Startup Founders & Agency Owners",
-  "voice": "High-Energy, Technical Authority & Fast-Paced",
-  "cta_goal": "Comment \"AUTOMATE\" for free 10-step template",
-  "gemini_api_key": ""
+  "name": "",
+  "niche": "",
+  "audience": "",
+  "voice": "",
+  "cta_goal": "",
+  "youtube_url": "",
+  "model_name": "hf.co/unsloth/Qwen3.5-9B-GGUF:Q4_K_M"
 }

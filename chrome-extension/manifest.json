@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "AutoEdit Studio — Floating Teleprompter Overlay",
+  "version": "1.0.0",
+  "description": "Floating, transparent teleprompter overlay for screen recordings (Google Slides, VS Code, Browser Demos).",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "AutoEdit Floating Teleprompter"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "css": ["overlay.css"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

@@ -1,101 +1,107 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Sparkles, Video, FileText, CheckCircle2, ArrowRight, FastForward, Cpu } from 'lucide-react';
+import { History } from "lucide-react";
 
-interface StepperNavProps {
-  currentStage: number;
-  setStage: (stage: number) => void;
-  gpuStatus: { gpu_available: boolean; gpu_name: string; encoder: string };
-}
-
-export const STAGES = [
-  { id: 1, name: 'Idea & Script', icon: Sparkles, desc: 'Brand Brain & Gemini SEO' },
-  { id: 2, name: 'Prompter & Record', icon: FileText, desc: 'Floating Desktop Prompter' },
-  { id: 3, name: 'Auto-Edit Studio', icon: Video, desc: 'AI Cuts, Captions & BGM' },
-  { id: 4, name: 'Launch & Export', icon: CheckCircle2, desc: 'GPU NVENC & Social Copy' },
+const STEPS = [
+  { n: 1, label: "Plan", hint: "Topic & script" },
+  { n: 2, label: "Record", hint: "Camera & screen" },
+  { n: 3, label: "Polish", hint: "Trim & captions" },
+  { n: 4, label: "Create", hint: "Export video" },
 ];
 
-export default function StepperNav({ currentStage, setStage, gpuStatus }: StepperNavProps) {
+interface Props {
+  step: 1 | 2 | 3 | 4;
+  setStep: (s: 1 | 2 | 3 | 4) => void;
+  hasScript: boolean;
+  hasVideo: boolean;
+  engineOnline: boolean | null;
+  engineNote: string;
+  onOpenHistory: () => void;
+}
+
+export default function StepperNav({
+  step,
+  setStep,
+  hasScript,
+  hasVideo,
+  engineOnline,
+  engineNote,
+  onOpenHistory,
+}: Props) {
+  // Simple gating: you can only jump to a step whose prerequisites exist.
+  function canGo(n: number): boolean {
+    if (n === 1) return true;
+    if (n === 2) return hasScript;
+    if (n === 3 || n === 4) return hasVideo;
+    return false;
+  }
+
   return (
-    <header className="sticky top-0 z-50 glass-panel border-b border-surface-border px-6 py-3.5 flex items-center justify-between">
-      {/* Brand Logo & Name */}
-      <div className="flex items-center gap-3 cursor-pointer" onClick={() => setStage(1)}>
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/25">
-          <Sparkles className="w-5 h-5 text-white animate-pulse" />
-        </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="font-extrabold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-200 to-indigo-400">
-              AutoEdit Studio
-            </span>
-            <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-              Native GPU
-            </span>
+    <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-6">
+        <div className="flex items-center gap-2.5">
+          <div className="h-9 w-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black">
+            A
           </div>
-          <p className="text-xs text-slate-400">Autonomous Video Editing Engine</p>
-        </div>
-      </div>
-
-      {/* 4-Stage Stepper Navigation */}
-      <div className="hidden md:flex items-center gap-1.5 bg-surface/80 p-1.5 rounded-2xl border border-surface-border">
-        {STAGES.map((stage) => {
-          const Icon = stage.icon;
-          const isActive = currentStage === stage.id;
-          const isCompleted = currentStage > stage.id;
-
-          return (
-            <button
-              key={stage.id}
-              onClick={() => setStage(stage.id)}
-              className={`flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 ${
-                isActive
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-bold'
-                  : isCompleted
-                  ? 'text-indigo-300 hover:text-white hover:bg-surface-hover'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-surface-hover'
-              }`}
-            >
-              <div
-                className={`w-5 h-5 rounded-lg flex items-center justify-center text-[10px] ${
-                  isActive
-                    ? 'bg-white/20 text-white'
-                    : isCompleted
-                    ? 'bg-indigo-500/20 text-indigo-400'
-                    : 'bg-slate-800 text-slate-400'
-                }`}
-              >
-                {stage.id}
-              </div>
-              <div className="text-left">
-                <div>{stage.name}</div>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Hardware Status & Quick Skip */}
-      <div className="flex items-center gap-3">
-        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-surface-border text-xs">
-          <Cpu className={`w-3.5 h-3.5 ${gpuStatus.gpu_available ? 'text-emerald-400' : 'text-amber-400'}`} />
-          <span className="text-slate-300 font-mono">
-            {gpuStatus.gpu_available ? gpuStatus.gpu_name : 'CPU / DirectML'}
-          </span>
-          <span className="px-1.5 py-0.2 text-[9px] rounded bg-emerald-500/20 text-emerald-400 font-bold">
-            {gpuStatus.encoder}
-          </span>
+          <div className="leading-tight">
+            <div className="font-bold text-slate-900">AutoEdit Studio</div>
+            <div className="text-[11px] text-slate-400">
+              {engineOnline === null
+                ? "Starting…"
+                : engineOnline
+                ? engineNote || "Ready"
+                : "Engine offline"}
+            </div>
+          </div>
         </div>
 
-        {currentStage === 1 && (
-          <button
-            onClick={() => setStage(3)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-white text-xs font-medium transition border border-indigo-500/20"
-          >
-            <FastForward className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Skip to Quick Edit</span>
-          </button>
-        )}
+        <nav className="flex items-center gap-1 sm:gap-2 flex-1 justify-center">
+          {STEPS.map((s, i) => {
+            const active = step === s.n;
+            const done = step > s.n;
+            const enabled = canGo(s.n);
+            return (
+              <div key={s.n} className="flex items-center">
+                <button
+                  disabled={!enabled}
+                  onClick={() => enabled && setStep(s.n as 1 | 2 | 3 | 4)}
+                  className={`flex items-center gap-2 rounded-xl px-2.5 sm:px-3.5 py-2 transition ${
+                    active
+                      ? "bg-indigo-50 text-indigo-700"
+                      : enabled
+                      ? "text-slate-500 hover:bg-slate-100"
+                      : "text-slate-300 cursor-not-allowed"
+                  }`}
+                >
+                  <span
+                    className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
+                      done
+                        ? "bg-emerald-500 text-white"
+                        : active
+                        ? "bg-indigo-600 text-white"
+                        : "bg-slate-200 text-slate-500"
+                    }`}
+                  >
+                    {done ? "✓" : s.n}
+                  </span>
+                  <span className="hidden md:block text-sm font-semibold">{s.label}</span>
+                </button>
+                {i < STEPS.length - 1 && (
+                  <span className="hidden sm:block h-px w-4 bg-slate-200 mx-0.5" />
+                )}
+              </div>
+            );
+          })}
+        </nav>
+
+        <button
+          onClick={onOpenHistory}
+          title="Saved scripts & topics"
+          className="flex items-center gap-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl px-3 py-2 text-sm"
+        >
+          <History size={16} />
+          <span className="hidden sm:inline">Saved</span>
+        </button>
       </div>
     </header>
   );

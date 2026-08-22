@@ -9,34 +9,34 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: '#090a0f',
-        surface: '#12141c',
-        'surface-border': '#1e2230',
-        'surface-hover': '#1a1e2b',
+        background: '#f8fafc',
+        surface: '#ffffff',
+        'surface-border': '#e2e8f0',
+        'surface-hover': '#f1f5f9',
         primary: {
-          DEFAULT: '#6366f1',
-          hover: '#4f46e5',
-          light: '#818cf8',
+          DEFAULT: '#4f46e5',
+          hover: '#4338ca',
+          light: '#6366f1',
         },
         accent: {
-          cyan: '#06b6d4',
-          yellow: '#fbbf24',
-          green: '#10b981',
-          rose: '#f43f5e',
-          magenta: '#d946ef'
+          cyan: '#0284c7',
+          yellow: '#d97706',
+          green: '#059669',
+          rose: '#e11d48',
+          magenta: '#c026d3'
         }
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
       },
       animation: {
-        'pulse-glow': 'pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'pulse-subtle': 'pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'shimmer': 'shimmer 2s linear infinite',
       },
       keyframes: {
-        'pulse-glow': {
-          '0%, 100%': { opacity: 1, filter: 'drop-shadow(0 0 15px rgba(99, 102, 241, 0.6))' },
-          '50%': { opacity: .7, filter: 'drop-shadow(0 0 5px rgba(99, 102, 241, 0.2))' },
+        'pulse-subtle': {
+          '0%, 100%': { opacity: 1 },
+          '50%': { opacity: .75 },
         },
         'shimmer': {
           '0%': { backgroundPosition: '-200% 0' },

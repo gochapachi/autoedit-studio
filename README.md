@@ -1,112 +1,114 @@
-# ⚡ AutoEdit Studio — Native Windows AI Video Automation Engine
+# AutoEdit Studio — 100% Local AI Video Studio for Founders & Creators
 
-> **Production-Grade, 100% Local GPU-Accelerated Video Editor for Windows.** Transform raw multi-take footage and long videos into viral, high-retention Reels, Shorts, and TikToks in under 60 seconds with **zero manual cutting**, **<4GB VRAM footprint**, and **Gemini-powered content strategy**.
+A GPU-accelerated, privacy-first video studio that runs entirely on your PC. Research topics, write scripts, record with a teleprompter, and get an auto-edited vertical video with captions, B-roll, music, transitions and color grading — no cloud, no subscriptions, your data never leaves your machine.
 
----
-
-## 🌟 The 4-Stage Full-Funnel Content Engine
-
-```
-┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│  STAGE 1: STRATEGY & SCRIPT ───> STAGE 2: TELEPROMPTER & RECORD ───> STAGE 3: DROP & AUTO-EDIT ───> STAGE 4: PUBLISH   │
-│  • Brand Brain Profile           • Floating Desktop Prompter         • Script-to-Take Matcher       • ~6s NVENC Render │
-│  • Gemini Keyword/SEO Discovery  • Adjustable Auto-Scroll & Pacing   • 1-Click Silence & Filler Cut • 1-Click Social Copy│
-│  • 1-Click Viral Script Pack     • Pacing & Visual Cues              • Kinetic Subtitles & BGM Beat • Multi-Format Exporter│
-└────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-```
+> **Current stage: working beta.** The full pipeline (plan → record → polish → export, and one-click Quick Edit) runs end-to-end on Windows with NVIDIA GPU rendering (NVENC), local AI via Ollama, and AI B-roll generation via Wan2GP. Verified by an autonomous 10-test harness (`tests/agent_test_harness.py`, currently 10/10 green).
 
 ---
 
-## 🚀 Key Features
+## What it does
 
-### 🧠 1. Business Strategy & Gemini SEO Research
-- **Brand Brain**: Save your business niche, target audience, brand voice, and core offer once. All AI scripts and styling adapt automatically.
-- **Gemini Keyword & Trend Discovery**: Finds high-demand, low-competition search queries and analyzes competitor hook angles for YouTube Shorts and TikTok.
-- **Viral Script Generator**: Generates 30-60s retention scripts with scroll-stopping 3-second hooks, body points with visual/SFX cues (`[Action: Point to screen]`), and high-converting CTAs.
-- **Desktop Teleprompter**: Clean, translucent floating prompter with auto-scroll and color-coded pacing cues.
+### Two ways to make a video (choose on the home screen)
 
-### 🎙️ 2. Local Speech AI & Smart Cutting (<4GB VRAM Cap)
-- **Word-Level Whisper AI**: Fast local transcription using `faster-whisper` (INT8 quantized, ~1.8GB VRAM).
-- **Silero-VAD Silence Cutter**: Removes awkward pauses (>0.35s) and compresses gaps into natural conversational flow.
-- **Filler Word Purger**: Automatically detects and excises "um", "uh", "aahh", "like", and heavy breaths.
-- **Script-to-Take Matcher**: Automatically matches recorded takes against your generated script and selects the highest quality delivery (`Take 2 ⭐ Best`).
-- **Studio Voice Mastering**: Built-in equalizer, compressor, and noise gate for broadcast-quality audio (-14 LUFS standard).
+**1. Just edit my videos (Quick Edit)** — upload one or many video files and press one button. The AI agent then:
+- Merges your uploads into one video
+- Transcribes speech locally (faster-whisper)
+- Cuts silences and filler words ("um", "uh")
+- **Plans B-roll cutaways** — where they go, what each shows (chosen by your local LLM)
+- Picks music mood, transition style, and color grade
+- Renders on your NVIDIA GPU (NVENC) with animated captions on top
 
-### ✍️ 3. Kinetic Subtitles, Visual Overlays & B-Roll
-- **Word-by-Word Active Karaoke Captions**: Synchronized active bounce, glow, and color shifting.
-- **Trending Style Presets**: *Alex Hormozi, MrBeast, Luxury Minimalist, Cyberpunk Neon*.
-- **Auto-Emoji & Keyword Accents**: Maps emotional words to animated bouncing emojis (💰, 🚀, 🔥, ❌, ⚠️).
-- **Top Hook Headline Banner**: 3-second curiosity headline across the top of the video to stop scrollers.
-- **AI Smart 9:16 Reframe & Face Tracking**: Smoothly pans and centers the active speaker in vertical format.
+Before rendering, you get the full plan to review and tweak — and **the final say**:
+- Tap transcript words to cut them yourself (overrides the auto cuts)
+- Fix misheard subtitle text by hand, or let the AI proofread the transcript
+- Add / remove / retime B-roll slots (including multiple custom slots)
+- Swap any B-roll for your own video file
+- Change music, transitions, captions, color look
+- Download via a real Save-As dialog
 
-### 🎵 4. Smart BGM, Beat Sync & Sound Effects
-- **`yt-dlp` Music Downloader**: Paste any YouTube / SoundCloud link or search by mood (*Lo-Fi Chill, Cyber Trap, Hype Workout, Cinematic Warmth*).
-- **Beat-Grid & Drop Alignment**: Librosa beat tracking snaps video cuts and text animations to musical downbeats.
-- **Intelligent Auto-Ducking (Vocal Sidechain)**: Drops BGM volume to -18dB during dialogue and smoothly swells during pauses.
-- **Crisp SFX Generator**: Auto-placed whooshes on zoom cuts, pops on captions, and risers in hooks.
+**2. Make a video from scratch (Guided Studio)** — a simple 4-step wizard:
+1. **Plan** — type a topic, see what people are actually searching (live YouTube data), get an AI-written script (editable cards: hook, lines, CTA), or paste your own notes and let the script doctor polish them. Optional YouTube channel audit.
+2. **Record** — screen + camera bubble, camera-only, or screen-only. Live viewfinder, camera & mic pickers with level meter, 3-2-1 countdown, recording timer that keeps running when you switch apps (worker-driven frames), system-audio capture with status hints, and a built-in teleprompter (WPM speed control, full-screen practice mode).
+3. **Polish** — tap words to cut, one-tap silence/filler removal, AI transcript fixing, caption styles, color looks, optional music.
+4. **Create** — one click renders on your GPU with live progress, then download / go back and tweak anything.
 
-### ⚡ 5. Hardware NVENC GPU Rendering & Pro UI
-- **Sub-10s Rendering**: NVIDIA NVENC (`h264_nvenc`) exports 1080x1920 60fps MP4 in **~6 to 8 seconds**.
-- **Dual Experience Modes**:
-  - *Simple Studio Mode*: Read and edit video like a Notion document + WYSIWYG draggable canvas.
-  - *Pro Timeline Mode*: Multi-track waveforms, retention drop-off heatmaps, and frame scrubbing.
-- **1-Click Social Packaging**: Instant copy for 3 high-CTR titles, SEO description with timestamp chapters, and viral hashtags.
+### AI models — all local
 
----
+| What | Engine | Notes |
+|---|---|---|
+| Scripts, research, edit plans, transcript fixing | **Ollama** (auto-started on demand) | Ships with `unsloth/Qwen3.5-9B` (fits 8GB VRAM) + smaller fallbacks. Model picker can search & install any Unsloth model live. |
+| B-roll **video** generation | **Wan2GP** + LTX-2 (GGUF) | Local text-to-video in <8GB VRAM, minutes per clip |
+| B-roll **image** generation | **Wan2GP** + Ideogram v4 / Krea 2 | Open-weight models running locally; images animated into Ken Burns cutaways |
+| Motion cards (animated B-roll/overlay cards) | **Remotion** (bundled studio) | Spring-animated typography cards rendered to transparent WebM |
+| Transcription | faster-whisper (int8) | Word-level timestamps, fully offline |
+| Video encoding | NVIDIA NVENC (+ NVDEC decode) | 1080×1920 vertical exports, CPU fallback |
 
-## 🛡️ 8GB VRAM Safeguard Architecture
-
-| Component | Technology | Memory Footprint |
-| :--- | :--- | :--- |
-| **Speech-To-Text** | `faster-whisper` (INT8 quantized) | **~1.8 GB VRAM** |
-| **Voice Activity / Silence** | `Silero-VAD` (TorchScript) | **~80 MB VRAM** |
-| **Face Tracking & Reframe** | OpenCV + MediaPipe | **~200 MB VRAM** |
-| **Video Encoding** | NVIDIA NVENC Hardware ASIC | **Dedicated Hardware (0 MB CUDA VRAM)** |
-| **Total Peak Usage** | **Sequential Model Lifecycle** | **< 3.5 GB VRAM** |
+### Honest by design
+No fabricated metrics, no fake success states. Every AI response carries a source badge (`AI` vs `Basic mode — start Ollama`), errors are shown in plain language, and research numbers come only from real sources (YouTube suggest API, yt-dlp).
 
 ---
 
-## 📦 Project Structure
+## Quick start (Windows)
 
-```
-AutoEdit-Studio/
-├── app/                          # Modern Next.js / React 19 Desktop GUI
-│   ├── src/
-│   │   ├── components/           # BrandBrain, ResearchHub, ScriptGen, Teleprompter, SimpleStudio, etc.
-│   │   └── app/                  # Studio Page & Layout
-│   └── package.json
-├── engine/                       # Local Python AI & Video Backend
-│   ├── api/server.py             # FastAPI REST & WebSocket Daemon
-│   ├── ai/                       # Whisper INT8, Silero-VAD, Gemini Research, Script Matcher
-│   ├── audio/                    # yt-dlp Music Fetcher, Librosa Beat Detector, SFX Ducking
-│   ├── video/                    # Kinetic Subtitles, Punch Zoom, Hook Banner, NVENC Renderer
-│   └── requirements.txt
-├── sfx_library/                  # Built-in sound effects (whoosh, pop, ding, riser, shutter)
-├── start_studio.bat              # 1-Click Native Windows Launcher
-└── README.md                     # Documentation
-```
+**Prerequisites:** Python 3.10+, Node.js 18+, an NVIDIA GPU (recommended), [Ollama for Windows](https://ollama.com/download) (optional but recommended — the app starts it automatically).
 
----
-
-## 🚀 1-Click Quickstart on Windows
-
-### Prerequisites
-1. **Python 3.10+** (Ensure "Add Python to PATH" was checked during installation).
-2. **Node.js v18+** (from [nodejs.org](https://nodejs.org)).
-3. **NVIDIA GPU** with CUDA drivers (GTX 1660 / RTX 2060 or higher recommended).
-
-### Launching the Studio
-Simply double-click:
-```bash
+```bat
 start_studio.bat
 ```
-This will automatically:
-1. Initialize the Python virtual environment and dependencies.
-2. Start the local Python GPU AI Engine on `http://127.0.0.1:8000`.
-3. Start the Next.js Desktop GUI on `http://localhost:3000`.
-4. Open your browser to the Studio Dashboard!
+
+That's it — the launcher installs dependencies on first run and opens the desktop window (pywebview). Prefer a browser? Run the two services yourself:
+
+```bash
+# 1. Python GPU engine (FastAPI) — port 8000
+python -m uvicorn api.server:app --app-dir engine --host 127.0.0.1 --port 8000
+
+# 2. Next.js frontend — port 3000
+cd app && npm install && npm run dev
+```
+
+Then open http://localhost:3000. The backend URL can be overridden with `NEXT_PUBLIC_API_BASE`.
+
+### Optional extras
+
+- **AI B-roll generation (Wan2GP):** install [Wan2GP](https://github.com/deepbeepmeep/Wan2GP) (default lookup path `D:\Wan2gp`, override with `AUTOEDIT_WGP_ROOT`). It provides local LTX-2 video and Ideogram v4 / Krea 2 image generation under 8GB VRAM.
+- **Motion cards (Remotion):** `cd app/broll-studio && npm install` — first render downloads Remotion's headless Chromium once (~150MB).
+- **Default AI model:** set `AUTOEDIT_OLLAMA_MODEL`, or pick from the in-app model picker (searches Unsloth's library live and installs with a progress bar).
 
 ---
 
-## 📄 License
-MIT License. Built for creators, founders, and video editors worldwide.
+## Project layout
+
+```
+app/                     Next.js 15 frontend
+  src/components/        PlanStep, RecordStep, PolishStep, ExportStep, QuickEdit,
+                         ModelPicker, TranscriptEditor, Teleprompter, ui…
+  src/lib/api.ts         Single API client (typed) + Save-As download helper
+  broll-studio/          Remotion motion-card studio (transparent WebM cards)
+engine/                  Python FastAPI backend
+  api/server.py          All REST + WebSocket endpoints
+  ai/                    local_ai (Ollama), ollama_manager (auto-start/model search),
+                         auto_editor (agentic edit plans), research/SEO, transcriber…
+  video/                 gpu_renderer (NVENC + cuts + overlays + transitions),
+                         broll (cinematic cards), motion_cards (Remotion),
+                         wgp_provider (Wan2GP LTX/Ideogram/Krea), subtitles, LUTs…
+tests/agent_test_harness.py   10-test autonomous verification harness
+desktop_app.py           pywebview desktop shell
+start_studio.bat         1-click Windows launcher
+```
+
+Full pipeline specs: see `ARCHITECTURE.md`. Agent/engineering guide: `AGENTS.md`.
+
+## Verification
+
+```bash
+python tests/agent_test_harness.py --json-report tests/agent_harness_report.json
+```
+
+10 subsystem tests: hardware/NVENC, local AI engine, script doctor, YouTube audit, history store, subtitle/filter suite, REST endpoints, GPU render pipeline, Ollama manager, agentic quick-edit pipeline (plan + B-roll + transitions).
+
+## Credits
+
+- [Wan2GP](https://github.com/deepbeepmeep/Wan2GP) — low-VRAM local video/image generation (LTX-2, Ideogram v4, Krea 2)
+- [Unsloth](https://unsloth.ai) — GGUF-quantized LLMs (Qwen3.5) via Ollama
+- [Remotion](https://remotion.dev) — programmatic motion graphics for cards
+- [faster-whisper](https://github.com/SYSTRAN/faster-whisper), [yt-dlp](https://github.com/yt-dlp/yt-dlp), FFmpeg (NVENC/NVDEC)
