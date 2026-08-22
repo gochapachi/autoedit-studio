@@ -70,7 +70,7 @@ Then open http://localhost:3000. The backend URL can be overridden with `NEXT_PU
 
 ### Optional extras
 
-- **AI B-roll generation (Wan2GP):** install [Wan2GP](https://github.com/deepbeepmeep/Wan2GP) (default lookup path `D:\Wan2gp`, override with `AUTOEDIT_WGP_ROOT`). It provides local LTX-2 video and Ideogram v4 / Krea 2 image generation under 8GB VRAM.
+- **AI B-roll generation (Wan2GP):** install [Wan2GP](https://github.com/deepbeepmeep/Wan2GP) ( lookup path and, override with `AUTOEDIT_WGP_ROOT`). It provides local LTX-2 video and Ideogram v4 / Krea 2 image generation under 8GB VRAM.
 - **Motion cards (Remotion):** `cd app/broll-studio && npm install` — first render downloads Remotion's headless Chromium once (~150MB).
 - **Default AI model:** set `AUTOEDIT_OLLAMA_MODEL`, or pick from the in-app model picker (searches Unsloth's library live and installs with a progress bar).
 
